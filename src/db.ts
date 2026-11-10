@@ -1,4 +1,5 @@
 import type { Project, UserTemplate } from './types'
+import { migrateProject } from './migrate'
 
 const DB = 'hm-compcard'
 let dbp: Promise<IDBDatabase> | null = null
@@ -33,8 +34,8 @@ function tx<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectStore) 
 }
 
 export const saveProject = (p: Project) => tx('projects', 'readwrite', (s) => { s.put(p) })
-export const getProject = (id: string) => tx<Project | undefined>('projects', 'readonly', (s) => s.get(id))
-export const listProjects = () => tx<Project[]>('projects', 'readonly', (s) => s.getAll())
+export const getProject = (id: string) => tx<Project | undefined>('projects', 'readonly', (s) => s.get(id)).then((p) => (p ? migrateProject(p) : p))
+export const listProjects = () => tx<Project[]>('projects', 'readonly', (s) => s.getAll()).then((l) => l.map(migrateProject))
 export async function deleteProject(id: string) {
   await tx('projects', 'readwrite', (s) => { s.delete(id) })
   const d = await open()

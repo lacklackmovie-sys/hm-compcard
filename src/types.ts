@@ -89,18 +89,16 @@ export interface Design {
 export interface ModelInfo {
   nameKo: string
   nameEn: string
-  height: string
-  bust: string
-  waist: string
-  hip: string
-  shoe: string
-  hair: string
-  eye: string
+  birth: string // 년생 (e.g. 2001)
+  height: string // 키 (cm)
+  top: string // 상의 사이즈 (free text)
+  bottom: string // 하의 사이즈 (free text)
+  shoe: string // 신발 (mm)
   comment: string
   career: string
 }
 export type ShowKey =
-  | 'height' | 'bust' | 'waist' | 'hip' | 'shoe' | 'hair' | 'eye'
+  | 'birth' | 'height' | 'top' | 'bottom' | 'shoe'
   | 'comment' | 'career' | 'agencyName' | 'email' | 'fax' | 'logo'
 export type ShowMap = Record<ShowKey, boolean>
 export interface Agency { name: string; email: string; fax: string }
@@ -113,7 +111,7 @@ export interface PhotoMeta {
   h: number
   face: FaceInfo | null | undefined // undefined = not yet analysed
 }
-export interface Assign { photoId: string; zoom: number; ox?: number; oy?: number }
+export interface Assign { photoId: string; zoom: number; ox?: number; oy?: number; pinned?: boolean } // pinned = user put this photo in this slot by hand
 
 export interface Project {
   id: string
