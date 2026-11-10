@@ -43,7 +43,7 @@ function classicPortrait(): Design {
     photoEl('f1', 0, 0, 1, 0.69),
     rectEl('f2', 0, 0.69, 1, 0.008),
     textEl('f3', 'name', 0.07, 0.72, 0.86, 0.1, { sz: 6.4, sz2: 2.5, font: 'display', upper: true, ls: 5, valign: 'middle' }),
-    textEl('f4', 'stats', 0.07, 0.83, 0.86, 0.1, { sz: 2.5, sz2: 1.4, rowStyle: 'grid', cols: 3, weight: 500 }),
+    textEl('f4', 'stats', 0.07, 0.835, 0.86, 0.09, { sz: 3, sz2: 1.5, rowStyle: 'grid', cols: 5, weight: 500 }),
     lineEl('f5', 0.07, 0.938, 0.86, { color: 'muted', t: 0.08 }),
     textEl('f6', 'agency', 0.07, 0.945, 0.86, 0.035, { sz: 1.45, rowStyle: 'inline', valign: 'middle', font: 'display', color2: 'muted' }),
   ])

@@ -7,7 +7,7 @@ import type { El } from './types'
 
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const
 type Handle = (typeof HANDLES)[number]
-const KIND_LABEL: Record<string, string> = { name: '이름', stats: '신체 정보', comment: '코멘트', career: '경력', agency: '에이전시', free: '문구' }
+const KIND_LABEL: Record<string, string> = { name: '이름', stats: '프로필 정보', comment: '코멘트', career: '경력', agency: '에이전시', free: '문구' }
 export const elLabel = (e: El) => (e.type === 'photo' ? '사진 슬롯' : e.type === 'text' ? KIND_LABEL[e.kind] ?? '텍스트' : e.type === 'rect' ? '색 블록' : e.type === 'line' ? '라인' : '로고')
 
 export default function Preview() {
