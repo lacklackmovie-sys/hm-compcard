@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Agency, Assign, CardSize, Design, El, ModelInfo, PhotoMeta, Project, ShowMap, SideKey, UserTemplate } from './types'
 import * as db from './db'
+import { arrangeInto } from './arrange'
 import { aspectOf, activeSides, designOf, photoSlots, presetDesign, sanitizeDesign, uid } from './design'
 import { clone } from './templates'
 import { loadFonts } from './fonts'
@@ -14,8 +15,8 @@ export const SIZE_PRESETS: { id: string; label: string; size: CardSize }[] = [
   { id: 'ig45', label: '인스타그램 4:5 (1080×1350 px)', size: { w: 1080, h: 1350, unit: 'px' } },
 ]
 
-export const emptyModel = (): ModelInfo => ({ nameKo: '', nameEn: '', height: '', bust: '', waist: '', hip: '', shoe: '', hair: '', eye: '', comment: '', career: '' })
-export const defaultShow = (): ShowMap => ({ height: true, bust: true, waist: true, hip: true, shoe: true, hair: false, eye: false, comment: true, career: true, agencyName: true, email: true, fax: true, logo: true })
+export const emptyModel = (): ModelInfo => ({ nameKo: '', nameEn: '', birth: '', height: '', top: '', bottom: '', shoe: '', comment: '', career: '' })
+export const defaultShow = (): ShowMap => ({ birth: true, height: true, top: true, bottom: true, shoe: true, comment: true, career: true, agencyName: true, email: true, fax: true, logo: true })
 export const DEFAULT_AGENCY: Agency = { name: 'HONEY MEDIA', email: 'hmagency@nate.com', fax: '0504-435-1081' }
 
 export function newProject(name = '새 모델', agency: Agency = DEFAULT_AGENCY): Project {
@@ -105,33 +106,6 @@ async function toImg(blob: Blob, max = PREVIEW_MAX): Promise<{ img: Img; w: numb
   const full = await decode(blob)
   const small = await shrink(full, max)
   return { img: { src: small, w: small.width, h: small.height }, w: full.width, h: full.height, full, closeFull: () => { if ((small as unknown) !== (full as unknown)) full.close?.() } }
-}
-
-function arrangeInto(p: Project, reset: boolean) {
-  const d = designOf(p)
-  const slots = photoSlots(p, d)
-  const ids = new Set(slots.map((s) => s.id))
-  const photoIds = new Set(p.photos.map((x) => x.id))
-  // drop stale assignments
-  for (const k of Object.keys(p.assign)) {
-    if (!photoIds.has(p.assign[k].photoId)) delete p.assign[k]
-    else if (reset && ids.has(k)) delete p.assign[k]
-  }
-  const used = new Set(slots.filter((s) => p.assign[s.id]).map((s) => p.assign[s.id].photoId))
-  const remaining = p.photos.filter((x) => !used.has(x.id))
-  const order = slots.filter((s) => !p.assign[s.id]).sort((a, b) => b.w * b.h - a.w * a.h)
-  const aspect = aspectOf(p)
-  order.forEach((s, i) => {
-    if (!remaining.length) return
-    const sa = (s.w * aspect) / s.h
-    let bi = 0
-    if (i > 0 || used.size > 0) {
-      let best = Infinity
-      remaining.forEach((m, j) => { const dlt = Math.abs(Math.log(m.w / m.h / sa)); if (dlt < best) { best = dlt; bi = j } })
-    }
-    const m = remaining.splice(bi, 1)[0]
-    p.assign[s.id] = { photoId: m.id, zoom: 1 }
-  })
 }
 
 const sampleSvgs = (): { name: string; color: [string, string]; pose: number }[] => [
@@ -278,14 +252,16 @@ export const useStore = create<State>()((set, get) => {
       const i = p.photos.findIndex((x) => x.id === id), j = i + dir
       if (i < 0 || j < 0 || j >= p.photos.length) return
       ;[p.photos[i], p.photos[j]] = [p.photos[j], p.photos[i]]
+      // 순서를 바꾸면 직접 지정한 칸도 풀고, 목록 순서(#1 → 대표 칸 …)대로 다시 배치한다
+      arrangeInto(p, true)
     }),
     assignPhoto: (slotId, photoId) => get().mut((p) => {
       const slots = photoSlots(p).map((s) => s.id)
       const cur = p.assign[slotId]
       const other = slots.find((id) => id !== slotId && p.assign[id]?.photoId === photoId)
-      const keep: Assign = { photoId, zoom: 1 }
+      const keep: Assign = { photoId, zoom: 1, pinned: true }
       if (other) { // swap with the slot that currently shows this photo
-        if (cur) p.assign[other] = { photoId: cur.photoId, zoom: 1 }
+        if (cur) p.assign[other] = { photoId: cur.photoId, zoom: 1, pinned: true }
         else delete p.assign[other]
       }
       p.assign[slotId] = keep
@@ -352,10 +328,9 @@ export const useStore = create<State>()((set, get) => {
     },
     fillSample: async () => {
       get().mut((p) => {
-        p.model = { nameKo: '김하니', nameEn: 'Hani Kim', height: '174', bust: '82', waist: '60', hip: '89', shoe: '245', hair: '다크 브라운', eye: '브라운',
+        p.model = { nameKo: '김하니', nameEn: 'Hani Kim', birth: '2001', height: '174', top: '55', bottom: '26', shoe: '245',
           comment: '자연스러운 표정 연기와 다양한 포즈가 강점입니다.\n화보·룩북·쇼핑몰 촬영 다수 경험.',
           career: '2025 S/S 서울패션위크 런웨이\n2025 룩북 다수 촬영\n뷰티 브랜드 온라인 광고' }
-        p.show.hair = true
       })
       const files: File[] = []
       for (let i = 0; i < 6; i++) files.push(await makeSampleFile(i))

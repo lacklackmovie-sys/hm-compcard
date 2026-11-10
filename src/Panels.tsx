@@ -9,14 +9,12 @@ import type { ModelInfo, ShowKey } from './types'
 import { px2mm } from './render'
 
 /* ================= 모델 정보 ================= */
-const STAT_FIELDS: { k: keyof ModelInfo & ShowKey; label: string; ph: string; unit: string }[] = [
+const STAT_FIELDS: { k: keyof ModelInfo & ShowKey; label: string; ph: string; unit: string; inputMode?: 'numeric' | 'text' }[] = [
+  { k: 'birth', label: '년생', ph: '2001', unit: '', inputMode: 'numeric' },
   { k: 'height', label: '키', ph: '174', unit: 'cm' },
-  { k: 'bust', label: '가슴', ph: '82', unit: 'cm' },
-  { k: 'waist', label: '허리', ph: '60', unit: 'cm' },
-  { k: 'hip', label: '엉덩이', ph: '89', unit: 'cm' },
+  { k: 'top', label: '상의', ph: '55 / S / 90', unit: '' },
+  { k: 'bottom', label: '하의', ph: '26 / M', unit: '' },
   { k: 'shoe', label: '신발', ph: '245', unit: 'mm' },
-  { k: 'hair', label: '머리색 (선택)', ph: '다크 브라운', unit: '' },
-  { k: 'eye', label: '눈색 (선택)', ph: '브라운', unit: '' },
 ]
 export function ModelPanel() {
   const { p, mut, setLogo, fillSample } = useStore()
@@ -37,16 +35,16 @@ export function ModelPanel() {
         <Row label="이름 (한글)"><input data-testid="nameKo" value={p.model.nameKo} onChange={(e) => setM('nameKo', e.target.value)} placeholder="김하니" /></Row>
         <Row label="이름 (영문)"><input data-testid="nameEn" value={p.model.nameEn} onChange={(e) => setM('nameEn', e.target.value)} placeholder="Hani Kim" /></Row>
       </Section>
-      <Section title="신체 정보">
+      <Section title="프로필 정보 (이름 아래 줄)">
         {STAT_FIELDS.map((f) => (
           <div className="frow" key={f.k}>
             <input type="checkbox" aria-label={`${f.label} 표시`} checked={p.show[f.k]} onChange={(e) => tog(f.k, e.target.checked)} />
             <span className="fl">{f.label}</span>
-            <input data-testid={`f-${f.k}`} value={p.model[f.k]} placeholder={f.ph} onChange={(e) => setM(f.k, e.target.value)} />
+            <input data-testid={`f-${f.k}`} inputMode={f.inputMode} value={p.model[f.k]} placeholder={f.ph} onChange={(e) => setM(f.k, e.target.value)} />
             {f.unit && <em>{f.unit}</em>}
           </div>
         ))}
-        <div className="hint">숫자만 입력하면 단위(cm, mm)가 자동으로 붙어요.</div>
+        <div className="hint">키·신발은 숫자만 입력하면 단위(cm, mm)가 자동으로 붙어요. 상의·하의는 55, S, 90처럼 적은 그대로 나와요. 비워두거나 체크를 끄면 카드에서 사라져요.</div>
       </Section>
       <Section title="코멘트 · 경력">
         <div className="frow top"><input type="checkbox" aria-label="코멘트 표시" checked={p.show.comment} onChange={(e) => tog('comment', e.target.checked)} /><span className="fl">코멘트</span></div>
@@ -94,7 +92,7 @@ export function PhotoPanel() {
       </div>
       {s.busy && <div className="note">{s.busy}</div>}
       <div className="hint">
-        첫 번째 사진이 가장 큰 대표 칸에 들어가요. 나머지는 칸 모양에 맞춰 자동 배치돼요.
+        사진은 아래 목록 순서 그대로 칸에 들어가요: 1번 → 가장 큰 대표 칸, 2번 → 두 번째 칸 … ◀ ▶로 순서를 바꾸면 카드도 바로 바뀌어요(직접 지정했던 칸도 순서대로 다시 배치돼요). 카드에서 사진을 끌어다 놓아 직접 지정하면 그 칸은 고정되고, 나머지는 순서대로 채워져요.
         {face === 'ready' ? ' 얼굴 인식 켜짐: 얼굴이 잘리지 않게 자동으로 맞춰요.' : face === 'failed' ? ' 얼굴 인식을 불러오지 못해 사진 위쪽 중심으로 맞춰요.' : ' 얼굴 인식 불러오는 중…'}
       </div>
       <div className="trayhead">
@@ -110,7 +108,7 @@ export function PhotoPanel() {
               onDragStart={(e) => { e.dataTransfer.setData('text/photo-id', m.id); e.dataTransfer.effectAllowed = 'move' }}
               onClick={() => { if (selSlot) s.assignPhoto(selSlot, m.id) }} title={selSlot ? '선택한 칸에 넣기' : '칸을 먼저 선택하거나 사진을 카드로 끌어다 놓으세요'}>
               <Thumb src={im?.src} w={im?.w ?? 1} h={im?.h ?? 1} size={72} />
-              {i === 0 && <span className="badge">대표</span>}
+              <span className="badge">{i === 0 ? '1 · 대표' : i + 1}</span>
               <span className="face">{m.face ? '얼굴✓' : m.face === null ? '얼굴 없음' : '—'}</span>
               <div className="phbtn">
                 <button aria-label="앞으로" disabled={i === 0} onClick={(e) => { e.stopPropagation(); s.movePhoto(m.id, -1) }}>◀</button>
@@ -129,12 +127,11 @@ export function PhotoPanel() {
             <Row label="확대"><Num value={a.zoom} min={1} max={4} step={0.01} suffix="배" onChange={(v) => s.mut((q) => { const x = q.assign[selSlot]; if (x) x.zoom = v })} testid="zoom" /></Row>
             <div className="btnrow">
               <button className="ghost sm" onClick={() => s.mut((q) => { const x = q.assign[selSlot]; if (x) { delete x.ox; delete x.oy; x.zoom = 1 } })}>위치 자동 맞춤</button>
-              <button className="ghost sm" onClick={() => s.mut((q) => { delete q.assign[selSlot] })}>칸 비우기</button>
             </div>
             <Row label="다른 칸과 교체">
               <select value="" onChange={(e) => {
                 const other = e.target.value; if (!other) return
-                s.mut((q) => { const x = q.assign[selSlot], y = q.assign[other]; if (y) q.assign[selSlot] = y; else delete q.assign[selSlot]; if (x) q.assign[other] = x })
+                s.mut((q) => { const x = q.assign[selSlot], y = q.assign[other]; if (y) q.assign[selSlot] = { ...y, pinned: true }; else delete q.assign[selSlot]; if (x) q.assign[other] = { ...x, pinned: true } })
               }} data-testid="swap">
                 <option value="">선택…</option>
                 {slots.filter((x) => x.id !== selSlot).map((x) => <option key={x.id} value={x.id}>{x.side === 'back' ? '뒷면' : x.side === 'front' ? '앞면' : ''} 칸 #{slotIdx(x.id)}</option>)}

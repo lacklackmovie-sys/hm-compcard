@@ -170,7 +170,7 @@ function LayoutTools({ d, sideKey }: { d: Design; sideKey: SideKey }) {
         <button className="sm" data-testid="add-photo" onClick={() => add(photoEl(uid('ph'), 0.3, 0.3, 0.3, 0.3))}>＋ 사진 칸</button>
         {(['name', 'stats', 'comment', 'career', 'agency', 'free'] as const).map((k) => (
           <button className="sm" key={k} onClick={() => add(textEl(uid('tx'), k, 0.1, 0.1, 0.5, k === 'name' ? 0.08 : 0.15, { sz: k === 'name' ? 5 : 2.2, text: k === 'free' ? '문구를 입력하세요' : '', font: k === 'name' ? 'display' : 'body', color: 'text', color2: 'accent' }))}>
-            ＋ {k === 'name' ? '이름' : k === 'stats' ? '신체정보' : k === 'comment' ? '코멘트' : k === 'career' ? '경력' : k === 'agency' ? '에이전시' : '문구'}
+            ＋ {k === 'name' ? '이름' : k === 'stats' ? '프로필정보(년생·키·상하의·신발)' : k === 'comment' ? '코멘트' : k === 'career' ? '경력' : k === 'agency' ? '에이전시' : '문구'}
           </button>
         ))}
         <button className="sm" onClick={() => add(rectEl(uid('rc'), 0.1, 0.1, 0.3, 0.2, { fill: 'bg2' }))}>＋ 색 블록</button>
@@ -307,7 +307,7 @@ function TextProps({ el, set, th }: { el: TextEl; set: (fn: (e: any) => void) =>
         <>
           <Row label="배열"><Seg value={el.rowStyle === 'stack' ? 'rows' : el.rowStyle} options={[['rows', '세로 표'], ['inline', '가로 나열'], ['grid', '격자']]} onChange={(v) => set((t) => { t.rowStyle = v })} /></Row>
           {el.rowStyle === 'grid' && <Row label="열 개수"><Num slider={false} value={el.cols} min={1} max={6} onChange={(v) => set((t) => { t.cols = Math.round(v) })} /></Row>}
-          <Row label="라벨"><Seg value={el.labelMode} options={[['en', 'HEIGHT'], ['ko', '키']]} onChange={(v) => set((t) => { t.labelMode = v })} /></Row>
+          <Row label="라벨"><Seg value={el.labelMode} options={[['en', 'BIRTH·HEIGHT'], ['ko', '출생·키']]} onChange={(v) => set((t) => { t.labelMode = v })} /></Row>
         </>
       )}
       {(el.kind === 'comment' || el.kind === 'career') && (

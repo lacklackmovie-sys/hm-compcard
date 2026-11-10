@@ -11,14 +11,21 @@ export interface Scene {
 }
 
 export const FIELDS = [
+  { k: 'birth', en: 'BIRTH', ko: '출생', unit: '' },
   { k: 'height', en: 'HEIGHT', ko: '키', unit: 'cm' },
-  { k: 'bust', en: 'BUST', ko: '가슴', unit: 'cm' },
-  { k: 'waist', en: 'WAIST', ko: '허리', unit: 'cm' },
-  { k: 'hip', en: 'HIPS', ko: '엉덩이', unit: 'cm' },
+  { k: 'top', en: 'TOP', ko: '상의', unit: '' },
+  { k: 'bottom', en: 'BOTTOM', ko: '하의', unit: '' },
   { k: 'shoe', en: 'SHOES', ko: '신발', unit: 'mm' },
-  { k: 'hair', en: 'HAIR', ko: '머리색', unit: '' },
-  { k: 'eye', en: 'EYES', ko: '눈색', unit: '' },
 ] as const
+
+/** 년생: 2001 → '2001' (영문 라벨 BIRTH) / '2001년생' (한글 라벨). 숫자가 아니면 입력 그대로. */
+export function fmtBirth(v: string, ko: boolean): string {
+  const t = v.trim()
+  if (!t) return ''
+  const m = /^(\d{4}|\d{2})\s*(년생|년|년도)?$/.exec(t)
+  if (!m) return t
+  return ko ? `${m[1]}년생` : m[1]
+}
 
 export function colorOf(theme: Theme, c: string): string {
   switch (c) {
@@ -104,11 +111,12 @@ function wrapPara(ctx: CanvasRenderingContext2D, r: Run, s: number, maxW: number
   return out
 }
 
-function modelFieldItems(project: Project, e: TextEl) {
+export function modelFieldItems(project: Project, e: TextEl) {
   const out: { label: string; value: string }[] = []
   for (const f of FIELDS) {
     if (!project.show[f.k as keyof typeof project.show]) continue
-    const v = fmtValue(project.model[f.k as keyof ModelInfo] as string, f.unit)
+    const raw = project.model[f.k as keyof ModelInfo] as string
+    const v = f.k === 'birth' ? fmtBirth(raw ?? '', e.labelMode === 'ko') : fmtValue(raw ?? '', f.unit)
     if (v) out.push({ label: e.labelMode === 'ko' ? f.ko : f.en, value: v })
   }
   return out
