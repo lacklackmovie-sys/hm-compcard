@@ -12,6 +12,7 @@ import { px2mm } from './render'
 const STAT_FIELDS: { k: keyof ModelInfo & ShowKey; label: string; ph: string; unit: string; inputMode?: 'numeric' | 'text' }[] = [
   { k: 'birth', label: '년생', ph: '2001', unit: '', inputMode: 'numeric' },
   { k: 'height', label: '키', ph: '174', unit: 'cm' },
+  { k: 'weight', label: '몸무게', ph: '48', unit: 'kg' },
   { k: 'top', label: '상의', ph: '55 / S / 90', unit: '' },
   { k: 'bottom', label: '하의', ph: '26 / M', unit: '' },
   { k: 'shoe', label: '신발', ph: '245', unit: 'mm' },
@@ -44,7 +45,7 @@ export function ModelPanel() {
             {f.unit && <em>{f.unit}</em>}
           </div>
         ))}
-        <div className="hint">키·신발은 숫자만 입력하면 단위(cm, mm)가 자동으로 붙어요. 상의·하의는 55, S, 90처럼 적은 그대로 나와요. 비워두거나 체크를 끄면 카드에서 사라져요.</div>
+        <div className="hint">키·몸무게·신발은 숫자만 입력하면 단위(cm, kg, mm)가 자동으로 붙어요. 상의·하의는 55, S, 90처럼 적은 그대로 나와요. 비워두거나 체크를 끄면 카드에서 사라져요.</div>
       </Section>
       <Section title="코멘트 · 경력">
         <div className="frow top"><input type="checkbox" aria-label="코멘트 표시" checked={p.show.comment} onChange={(e) => tog('comment', e.target.checked)} /><span className="fl">코멘트</span></div>
