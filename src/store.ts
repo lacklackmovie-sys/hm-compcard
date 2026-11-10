@@ -42,6 +42,11 @@ interface State {
   face: typeof faceStatus
   busy: string
   toast: string
+  expDpi: number
+  expScale: number
+  expBusy: boolean
+  expMsg: string
+  setExp: (v: Partial<{ expDpi: number; expScale: number; expBusy: boolean; expMsg: string }>) => void
   rev: number
   init: () => Promise<void>
   mut: (fn: (p: Project) => void, opts?: { arrange?: boolean }) => void
@@ -196,7 +201,9 @@ export const useStore = create<State>()((set, get) => {
 
   return {
     ready: false, p: newProject(), projects: [], templates: [], imgs: new Map(), logo: null,
-    tab: 'model', sideKey: 'front', selSlot: null, selEl: null, saved: 'saved', face: 'idle', busy: '', toast: '', rev: 0,
+    tab: 'model', sideKey: 'front', selSlot: null, selEl: null, saved: 'saved', face: 'idle', busy: '', toast: '', rev: 0, expDpi: 300, expScale: 1, expBusy: false, expMsg: '',
+
+    setExp: (v) => set(v),
 
     say: (msg) => { set({ toast: msg }); window.setTimeout(() => { if (get().toast === msg) set({ toast: '' }) }, 3500) },
 

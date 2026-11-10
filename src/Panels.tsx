@@ -1,8 +1,9 @@
+import { runExport } from './exportActions'
 import { useRef, useState } from 'react'
 import { useStore, SIZE_PRESETS, DEFAULT_AGENCY } from './store'
 import { designOf, photoSlots, activeSides } from './design'
 import { Num, Row, Section, Seg, Thumb } from './ui'
-import { exportAllImages, exportImage, exportPDF, pixelSize } from './export'
+import { pixelSize } from './export'
 import * as db from './db'
 import type { ModelInfo, ShowKey } from './types'
 import { px2mm } from './render'
@@ -150,19 +151,14 @@ export function PhotoPanel() {
 export function SizePanel() {
   const s = useStore()
   const { p } = s
-  const [dpi, setDpi] = useState(300)
-  const [pxScale, setPxScale] = useState(1)
-  const [msg, setMsg] = useState('')
-  const [busy, setBusy] = useState(false)
+  const dpi = s.expDpi, setDpi = (v: number) => s.setExp({ expDpi: v })
+  const pxScale = s.expScale, setPxScale = (v: number) => s.setExp({ expScale: v })
+  const msg = s.expMsg, busy = s.expBusy
   const presetId = SIZE_PRESETS.find((x) => x.size.w === p.size.w && x.size.h === p.size.h && x.size.unit === p.size.unit)?.id ?? 'custom'
   const q = p.size.unit === 'mm' ? dpi : pxScale
   const px = pixelSize(p, q)
   const mm = p.size.unit === 'mm' ? p.size : { w: px2mm(p.size.w), h: px2mm(p.size.h) }
   const setSize = (w: number, h: number, unit: 'mm' | 'px') => s.mut((x) => { x.size = { w, h, unit } }, { arrange: true })
-  const run = async (label: string, fn: () => Promise<string>) => {
-    setBusy(true); setMsg(`${label} 만드는 중…`)
-    try { setMsg(await fn()) } catch (e) { setMsg(`실패: ${(e as Error).message}`) } finally { setBusy(false) }
-  }
   return (
     <div className="panel">
       <Section title="카드 크기">
@@ -193,15 +189,15 @@ export function SizePanel() {
         )}
         <div className="hint">저장 크기: {px.w} × {px.h} px</div>
         <div className="btnrow col">
-          <button className="primary" disabled={busy} data-testid="export-pdf" onClick={() => void run('PDF', async () => { const r = await exportPDF(useStore.getState().p, q); return `PDF 저장 완료: ${r.name} (${r.pages}쪽, ${r.mm.w.toFixed(1)}×${r.mm.h.toFixed(1)}mm, ${r.w}×${r.h}px, ${(r.bytes / 1e6).toFixed(1)}MB)` })}>인쇄용 PDF 저장 (앞·뒤 {p.sides === 2 ? '2쪽' : '1쪽'})</button>
+          <button className="primary" disabled={busy} data-testid="export-pdf" onClick={() => void runExport('pdf')}>인쇄용 PDF 저장 (앞·뒤 {p.sides === 2 ? '2쪽' : '1쪽'})</button>
           <div className="two">
-            <button disabled={busy} data-testid="export-jpg" onClick={() => void run('JPG', async () => { const r = await exportAllImages(useStore.getState().p, 'jpg', q); return `JPG 저장 완료: ${r.map((x) => `${x.name} (${x.w}×${x.h})`).join(', ')}` })}>JPG 전체</button>
-            <button disabled={busy} data-testid="export-png" onClick={() => void run('PNG', async () => { const r = await exportAllImages(useStore.getState().p, 'png', q); return `PNG 저장 완료: ${r.map((x) => `${x.name} (${x.w}×${x.h})`).join(', ')}` })}>PNG 전체</button>
+            <button disabled={busy} data-testid="export-jpg" onClick={() => void runExport('jpg')}>JPG 전체</button>
+            <button disabled={busy} data-testid="export-png" onClick={() => void runExport('png')}>PNG 전체</button>
           </div>
           {p.sides === 2 && (
             <div className="two">
-              <button className="ghost" disabled={busy} data-testid="export-jpg-front" onClick={() => void run('JPG', async () => { const r = await exportImage(useStore.getState().p, 'front', 'jpg', q); return `저장 완료: ${r.name}` })}>앞면 JPG만</button>
-              <button className="ghost" disabled={busy} data-testid="export-jpg-back" onClick={() => void run('JPG', async () => { const r = await exportImage(useStore.getState().p, 'back', 'jpg', q); return `저장 완료: ${r.name}` })}>뒷면 JPG만</button>
+              <button className="ghost" disabled={busy} data-testid="export-jpg-front" onClick={() => void runExport('jpg-front')}>앞면 JPG만</button>
+              <button className="ghost" disabled={busy} data-testid="export-jpg-back" onClick={() => void runExport('jpg-back')}>뒷면 JPG만</button>
             </div>
           )}
         </div>

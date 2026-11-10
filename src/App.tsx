@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useStore } from './store'
 import type { Tab } from './store'
@@ -6,6 +6,9 @@ import Preview from './Preview'
 import { ModelPanel, PhotoPanel, SizePanel } from './Panels'
 import DesignPanel from './DesignPanel'
 import { uid } from './design'
+import { runExport } from './exportActions'
+import type { ExportKind } from './exportActions'
+import { pixelSize } from './export'
 import type { El } from './types'
 
 const TABS: [Tab, string][] = [['model', '① 모델 정보'], ['photo', '② 사진'], ['design', '③ 디자인'], ['size', '④ 크기 · 저장']]
@@ -72,6 +75,7 @@ export default function App() {
         {offlineReady && <span className="pill ok" data-testid="offline-ready">오프라인 사용 준비됨</span>}
         {installEvt && <button className="primary" onClick={async () => { installEvt.prompt(); await installEvt.userChoice; setInstallEvt(null) }}>앱 설치</button>}
         {needRefresh && <button className="primary" onClick={() => void updateServiceWorker(true)}>새 버전 적용</button>}
+        <SaveMenu />
       </header>
       <div className="main">
         <aside className="side">
@@ -116,5 +120,62 @@ function ProjectList({ onClose }: { onClose: () => void }) {
         <div className="df"><button className="primary" onClick={async () => { await s.newProj(); onClose() }}>＋ 새 모델 만들기</button></div>
       </div>
     </div>
+  )
+}
+
+function SaveMenu() {
+  const s = useStore()
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  const btn = useRef<HTMLButtonElement>(null)
+  const pop = useRef<HTMLDivElement>(null)
+  const two = s.p.sides === 2
+  const q = s.p.size.unit === 'mm' ? s.expDpi : s.expScale
+  const px = pixelSize(s.p, q)
+
+  const place = () => {
+    const b = btn.current; if (!b) return
+    const r = b.getBoundingClientRect()
+    const W = 270
+    const left = Math.max(8, Math.min(window.innerWidth - W - 8, r.right - W))
+    setPos({ top: r.bottom + 6, left })
+  }
+  useEffect(() => {
+    if (!open) return
+    place()
+    const down = (e: MouseEvent | TouchEvent) => {
+      const t = e.target as Node
+      if (pop.current?.contains(t) || btn.current?.contains(t)) return
+      setOpen(false)
+    }
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); btn.current?.focus() } }
+    window.addEventListener('mousedown', down); window.addEventListener('touchstart', down); window.addEventListener('keydown', key); window.addEventListener('resize', place)
+    return () => { window.removeEventListener('mousedown', down); window.removeEventListener('touchstart', down); window.removeEventListener('keydown', key); window.removeEventListener('resize', place) }
+  }, [open])
+
+  const go = (k: ExportKind) => { setOpen(false); void runExport(k) }
+  const items: [ExportKind, string, string][] = [
+    ['pdf', '인쇄용 PDF 저장', two ? '앞·뒤 2쪽' : '1쪽'],
+    ['jpg', 'JPG 저장 (전체)', two ? '앞·뒤 2장' : '1장'],
+    ['png', 'PNG 저장 (전체)', two ? '앞·뒤 2장' : '1장'],
+  ]
+  if (two) { items.push(['jpg-front', '앞면 JPG만', '']); items.push(['jpg-back', '뒷면 JPG만', '']) }
+  return (
+    <>
+      <button ref={btn} className="savebtn" data-testid="top-save" aria-haspopup="menu" aria-expanded={open} disabled={s.expBusy} onClick={() => setOpen((o) => !o)}>
+        {s.expBusy ? '저장 중…' : '💾 저장 ▾'}
+      </button>
+      {open && (
+        <div ref={pop} className="savepop" role="menu" data-testid="top-save-menu" style={{ top: pos.top, left: pos.left }}>
+          <div className="sphead">저장 · {s.p.size.unit === 'mm' ? `${s.expDpi}dpi` : `${s.expScale}배`} · {px.w}×{px.h}px</div>
+          {items.map(([k, label, sub]) => (
+            <button key={k} role="menuitem" className={k === 'pdf' ? 'pdf' : ''} data-testid={`top-save-${k}`} onClick={() => go(k)}>
+              <span>{label}</span>{sub && <small>{sub}</small>}
+            </button>
+          ))}
+          <div className="sphint">해상도는 ④ 크기 · 저장 탭에서 바꿀 수 있어요.</div>
+        </div>
+      )}
+    </>
   )
 }
