@@ -13,6 +13,7 @@ export interface Scene {
 export const FIELDS = [
   { k: 'birth', en: 'BIRTH', ko: '출생', unit: '' },
   { k: 'height', en: 'HEIGHT', ko: '키', unit: 'cm' },
+  { k: 'weight', en: 'WEIGHT', ko: '몸무게', unit: 'kg' },
   { k: 'top', en: 'TOP', ko: '상의', unit: '' },
   { k: 'bottom', en: 'BOTTOM', ko: '하의', unit: '' },
   { k: 'shoe', en: 'SHOES', ko: '신발', unit: 'mm' },
@@ -187,18 +188,33 @@ function layoutText(ctx: CanvasRenderingContext2D, scene: Scene, e: TextEl, u: n
         lines.push({ segs: row.map((it, c) => place(val(it.value, size), c)), w: bw, lh: size * s * 1.25, gap: 0 })
       }
     } else { // inline
-      let cur: Seg[] = [], x = 0
       const gapX = size * 1.1 * s
-      const pushLine = () => { if (cur.length) lines.push({ segs: cur, w: x - gapX, lh: size * s * e.lh, gap: 0 }); cur = []; x = 0 }
-      for (const it of items) {
+      const cells = items.map((it) => {
         const lr = lab(it.label, size2), vr = val(it.value, size)
         const lw = meas(ctx, lr, s), vw = meas(ctx, vr, s)
-        const w = lw + size * 0.4 * s + vw
-        if (x > 0 && x + w > bw + 0.5) pushLine()
-        cur.push({ run: lr, dx: x, w: lw }, { run: vr, dx: x + lw + size * 0.4 * s, w: vw })
-        x += w + gapX
+        return { lr, vr, lw, vw, w: lw + size * 0.4 * s + vw }
+      })
+      const widthOf = (c: typeof cells) => c.reduce((a, x) => a + x.w, 0) + gapX * Math.max(0, c.length - 1)
+      // greedy wrap first, then rebalance to equal-sized rows (e.g. 3+3 instead of 5+1) when that still fits
+      let rows: (typeof cells)[] = []
+      let cur: typeof cells = []
+      for (const c of cells) {
+        if (cur.length && widthOf([...cur, c]) > bw + 0.5) { rows.push(cur); cur = [] }
+        cur.push(c)
       }
-      pushLine()
+      if (cur.length) rows.push(cur)
+      if (rows.length > 1) {
+        const per = Math.ceil(cells.length / rows.length)
+        const bal: (typeof cells)[] = []
+        for (let i = 0; i < cells.length; i += per) bal.push(cells.slice(i, i + per))
+        if (bal.every((r) => widthOf(r) <= bw + 0.5)) rows = bal
+      }
+      for (const r of rows) {
+        const segs: Seg[] = []
+        let x = 0
+        for (const c of r) { segs.push({ run: c.lr, dx: x, w: c.lw }, { run: c.vr, dx: x + c.lw + size * 0.4 * s, w: c.vw }); x += c.w + gapX }
+        lines.push({ segs, w: x - gapX, lh: size * s * e.lh, gap: 0 })
+      }
     }
   } else if (e.kind === 'comment' || e.kind === 'career' || e.kind === 'free') {
     let text = ''

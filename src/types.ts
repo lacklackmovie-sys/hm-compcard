@@ -91,6 +91,7 @@ export interface ModelInfo {
   nameEn: string
   birth: string // 년생 (e.g. 2001)
   height: string // 키 (cm)
+  weight: string // 몸무게 (kg)
   top: string // 상의 사이즈 (free text)
   bottom: string // 하의 사이즈 (free text)
   shoe: string // 신발 (mm)
@@ -98,7 +99,7 @@ export interface ModelInfo {
   career: string
 }
 export type ShowKey =
-  | 'birth' | 'height' | 'top' | 'bottom' | 'shoe'
+  | 'birth' | 'height' | 'weight' | 'top' | 'bottom' | 'shoe'
   | 'comment' | 'career' | 'agencyName' | 'email' | 'fax' | 'logo'
 export type ShowMap = Record<ShowKey, boolean>
 export interface Agency { name: string; email: string; fax: string }

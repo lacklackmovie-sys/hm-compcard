@@ -15,8 +15,8 @@ export const SIZE_PRESETS: { id: string; label: string; size: CardSize }[] = [
   { id: 'ig45', label: '인스타그램 4:5 (1080×1350 px)', size: { w: 1080, h: 1350, unit: 'px' } },
 ]
 
-export const emptyModel = (): ModelInfo => ({ nameKo: '', nameEn: '', birth: '', height: '', top: '', bottom: '', shoe: '', comment: '', career: '' })
-export const defaultShow = (): ShowMap => ({ birth: true, height: true, top: true, bottom: true, shoe: true, comment: true, career: true, agencyName: true, email: true, fax: true, logo: true })
+export const emptyModel = (): ModelInfo => ({ nameKo: '', nameEn: '', birth: '', height: '', weight: '', top: '', bottom: '', shoe: '', comment: '', career: '' })
+export const defaultShow = (): ShowMap => ({ birth: true, height: true, weight: true, top: true, bottom: true, shoe: true, comment: true, career: true, agencyName: true, email: true, fax: true, logo: true })
 export const DEFAULT_AGENCY: Agency = { name: 'HONEY MEDIA', email: 'hmagency@nate.com', fax: '0504-435-1081' }
 
 export function newProject(name = '새 모델', agency: Agency = DEFAULT_AGENCY): Project {
@@ -328,7 +328,7 @@ export const useStore = create<State>()((set, get) => {
     },
     fillSample: async () => {
       get().mut((p) => {
-        p.model = { nameKo: '김하니', nameEn: 'Hani Kim', birth: '2001', height: '174', top: '55', bottom: '26', shoe: '245',
+        p.model = { nameKo: '김하니', nameEn: 'Hani Kim', birth: '2001', height: '174', weight: '48', top: '55', bottom: '26', shoe: '245',
           comment: '자연스러운 표정 연기와 다양한 포즈가 강점입니다.\n화보·룩북·쇼핑몰 촬영 다수 경험.',
           career: '2025 S/S 서울패션위크 런웨이\n2025 룩북 다수 촬영\n뷰티 브랜드 온라인 광고' }
       })
