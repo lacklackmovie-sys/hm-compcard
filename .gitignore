@@ -1,0 +1,6 @@
+node_modules
+dist
+src/fonts
+public/mediapipe
+public/models
+public/icons
